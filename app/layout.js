@@ -3,7 +3,7 @@ import Navigation from "./components/Navigation";
 import "./globals.css";
 
 export const metadata = {
-  title: 'Frontend Laboratory App',
+  title: 'Calendar App',
   description: 'Created by Jakub Strugała - 14646',
 };
 
@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
             </main>
           </div>
           <footer className="bg-gray-800/50 backdrop-blur-sm text-white/70 text-center py-4">
-            <p>© {currentYear} Frontend Laboratory App. Created by Jakub Strugała - 14646</p>
+            <p>© {currentYear} Calendar App created by Jakub Strugała - 14646</p>
           </footer>
         </AuthProvider>
       </body>

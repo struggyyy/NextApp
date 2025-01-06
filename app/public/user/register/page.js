@@ -1,6 +1,8 @@
 'use client';
 
 import { createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { db } from "../../../lib/firebase"; // Import Firestore
+import { collection, setDoc, doc } from 'firebase/firestore'; // Import Firestore functions
 import { auth, sendVerificationEmail } from "../../../lib/firebase";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -16,10 +18,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-
-  const handleContinueWithoutVerification = async () => {
-    router.push('/protected/user/profile');
-  };
 
   const handleResendVerification = async () => {
     setIsLoading(true);
@@ -92,9 +90,6 @@ export default function RegisterPage() {
           
           <div className="space-y-6 text-white/70">
             <p className="text-center">
-              Twoje konto zostało utworzone pomyślnie!
-            </p>
-            <p className="text-center">
               Link weryfikacyjny został wysłany na adres:
               <br />
               <span className="font-medium text-white">{email}</span>
@@ -121,20 +116,6 @@ export default function RegisterPage() {
 
           <div className="mt-8 space-y-4">
             <button
-              onClick={handleContinueWithoutVerification}
-              disabled={isLoading}
-              className={clsx(
-                'w-full py-2 px-4 rounded-lg',
-                'bg-white/10 hover:bg-white/15',
-                'text-white font-medium',
-                'transition-all duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-white/25',
-                'disabled:opacity-50'
-              )}
-            >
-              Kontynuuj bez weryfikacji
-            </button>
-            <button
               onClick={handleResendVerification}
               disabled={isLoading}
               className={clsx(
@@ -148,9 +129,6 @@ export default function RegisterPage() {
             >
               {isLoading ? "Wysyłanie..." : "Wyślij ponownie link weryfikacyjny"}
             </button>
-            <p className="text-sm text-center text-white/50">
-              Zalecamy weryfikację emaila w celu zwiększenia bezpieczeństwa konta
-            </p>
           </div>
         </div>
       </div>

@@ -1,7 +1,9 @@
+// Existing content
 'use client';
 
 import { initializeApp } from "firebase/app";
 import { getAuth, sendEmailVerification } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";          
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_API_KEY,
@@ -15,6 +17,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Initialize Firestore
+export const db = getFirestore(app);      
 
 const sendVerificationEmail = async (user) => {
     const actionCodeSettings = {

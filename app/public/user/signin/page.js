@@ -54,14 +54,8 @@ export default function SignInPage() {
     } catch (error) {
       console.error(error.code, error.message);
       switch (error.code) {
-        case 'auth/invalid-email':
-          setError('Nieprawidłowy adres email.');
-          break;
-        case 'auth/user-not-found':
-          setError('Nie znaleziono użytkownika z tym adresem email.');
-          break;
-        case 'auth/wrong-password':
-          setError('Nieprawidłowe hasło.');
+        case 'auth/invalid-credential':
+          setError('Hasło jest nieprawidłowe lub adres email nie istnieje.');
           break;
         default:
           setError('Wystąpił błąd podczas logowania. Spróbuj ponownie.');
@@ -158,7 +152,7 @@ export default function SignInPage() {
           'shadow-2xl shadow-black/10'
         )}
       >
-        <h1 className="text-2xl font-medium text-white/90 mb-8 text-center">Logowanie</h1>
+        <h1 className="text-2xl font-medium text-white/90 mb-8 text-center">Sign In</h1>
         
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
@@ -184,7 +178,7 @@ export default function SignInPage() {
           </Field>
 
           <Field>
-            <Label className="text-sm/6 font-medium text-white/70">Hasło</Label>
+            <Label className="text-sm/6 font-medium text-white/70">Password</Label>
             <Input
               type="password"
               value={password}
@@ -212,7 +206,7 @@ export default function SignInPage() {
             'disabled:opacity-50'
           )}
         >
-          {isLoading ? 'Logowanie...' : 'Zaloguj się'}
+          {isLoading ? 'Logowanie...' : 'Sign In'}
         </button>
       </form>
     </div>

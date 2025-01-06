@@ -1,13 +1,15 @@
 'use client';
 
 import { useRouter } from "next/navigation";
-import { FaHome, FaUser, FaSignInAlt, FaUserPlus, FaSignOutAlt } from "react-icons/fa";
+import { FaHome, FaUser, FaSignInAlt, FaUserPlus, FaSignOutAlt, FaCalendar } from "react-icons/fa";
 import { Menu } from '@headlessui/react';
 import { useAuth } from "../lib/AuthContext";
 import Image from 'next/image';
 import clsx from 'clsx';
+import { useState } from "react";
 
 export default function Navigation() {
+  const [isOpen, setIsOpen] = useState(true);
   const router = useRouter();
   const { user } = useAuth();
 
@@ -69,33 +71,43 @@ export default function Navigation() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800/50 backdrop-blur-sm border-b border-white/10">
         <div className="flex items-center justify-between px-6 py-4">
-          <h1 className="text-lg font-medium text-white/90">Frontend Laboratory App</h1>
+          <h1 className="text-lg font-medium text-white/90">Calendar App</h1>
+          <button 
+            onClick={() => setIsOpen(!isOpen)} 
+            className="text-white"
+          >
+            {isOpen ? 'Hide Menu' : 'Show Menu'}
+          </button>
         </div>
       </header>
-
+      
       {/* Sidebar */}
-      <aside className="fixed top-16 left-0 bottom-0 w-64 bg-gray-800/30 backdrop-blur-sm border-r border-white/10">
+<aside className={clsx(
+        'bg-white/10 rounded-lg shadow-lg backdrop-blur-md',
+        'fixed top-16 left-0 bottom-0 transition-transform duration-300',
+        isOpen ? 'w-64 translate-x-0' : '-translate-x-full'
+      )}>
         <nav className="p-4 space-y-2">
-          <NavLink href="/" icon={FaHome}>
-            Strona główna
+          <NavLink href="/" icon={FaCalendar}>
+            Calendar
           </NavLink>
           
-          {user ? (
+          {user && user.emailVerified ? (
             <>
               <NavLink href="/protected/user/profile" icon={FaUser}>
-                Profil
+                Profile
               </NavLink>
               <NavLink href="/protected/user/signout" icon={FaSignOutAlt}>
-                Wyloguj
+                Sign Out
               </NavLink>
             </>
           ) : (
             <>
               <NavLink href="/public/user/signin" icon={FaSignInAlt}>
-                Logowanie
+                Sign In
               </NavLink>
               <NavLink href="/public/user/register" icon={FaUserPlus}>
-                Rejestracja
+                Register
               </NavLink>
             </>
           )}

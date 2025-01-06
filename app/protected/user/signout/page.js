@@ -29,9 +29,9 @@ export default function LogoutPage() {
                     'shadow-2xl shadow-black/10'
                 )}
             >
-                <h1 className="text-2xl font-medium text-white/90 mb-8 text-center">Wylogowanie</h1>
+                <h1 className="text-2xl font-medium text-white/90 mb-8 text-center">Sign Out</h1>
                 <p className="text-white/70 mb-8 text-center">
-                    Czy na pewno chcesz się wylogować?
+                Are you sure you want to log out?
                 </p>
                 <button
                     type="submit"
@@ -43,7 +43,7 @@ export default function LogoutPage() {
                         'focus:outline-none focus:ring-2 focus:ring-white/25'
                     )}
                 >
-                    Wyloguj się
+                    Sign Out
                 </button>
             </form>
         </div>

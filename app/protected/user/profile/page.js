@@ -1,12 +1,13 @@
 'use client';
 
 import { useAuth } from "../../../lib/AuthContext";
-import { auth } from "../../../lib/firebase";
+import { auth, db } from "../../../lib/firebase"; 
 import { deleteUser, updateProfile } from "firebase/auth";
+import { getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore'; // Corrected import
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import Image from 'next/image';
 import clsx from 'clsx';
+import { useForm } from 'react-hook-form';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -14,23 +15,51 @@ export default function ProfilePage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [formData, setFormData] = useState({
-    displayName: '',
-    photoURL: ''
-  });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [loading, setLoading] = useState(true); 
+
+  // Initialize useForm hook
+  const {
+    register,
+    setValue,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      email: user?.email || "",
+      displayName: user?.displayName || "",
+      photoURL: user?.photoURL || "",
+      street: '',
+      city: '',
+      zipCode: '',
+    },
+  });
 
   useEffect(() => {
     if (user) {
-      setFormData({
-        displayName: user.displayName || '',
-        photoURL: user.photoURL || ''
-      });
-      setImageError(false);
+      const fetchUserAddress = async () => {
+        try {
+          const snapshot = await getDoc(doc(db, "users", user.uid));
+          if (snapshot.exists()) {
+            const address = snapshot.data().address;
+            setValue("city", address.city);
+            setValue("zipCode", address.zipCode);
+            setValue("street", address.street);
+          }
+        } catch (error) {
+          console.error("Error fetching address:", error);
+          setError("Wystąpił błąd podczas ładowania danych adresowych.");
+        } finally {
+          setLoading(false); 
+        }
+      };
+
+      fetchUserAddress();
     }
-  }, [user]);
+  }, [user, setValue]);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -39,27 +68,25 @@ export default function ProfilePage() {
 
     try {
       await updateProfile(user, {
-        displayName: formData.displayName,
-        photoURL: formData.photoURL,
+        displayName: watch('displayName'),
+        photoURL: watch('photoURL'),
       });
+
+      await setDoc(doc(db, "users", user?.uid), {
+        address: {
+          street: watch('street'),
+          city: watch('city'),
+          zipCode: watch('zipCode'),
+        },
+      });
+
       setError("success:Profil został zaktualizowany.");
       setImageError(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      setError(error.message);
+      setError("Wystąpił błąd podczas aktualizacji profilu. Sprawdź swoje uprawnienia.");
     } finally {
       setIsUpdating(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (name === 'photoURL') {
-      setImageError(false);
     }
   };
 
@@ -89,12 +116,16 @@ export default function ProfilePage() {
     try {
       setIsDeleting(true);
       setError("");
-      
+
       const currentUser = auth.currentUser;
       if (!currentUser) {
         throw new Error("Nie znaleziono użytkownika");
       }
 
+// Delete user document from Firestore
+      await deleteDoc(doc(db, "users", currentUser.uid));
+
+      // Delete user from Firebase Authentication
       await deleteUser(currentUser);
       router.push("/");
     } catch (error) {
@@ -123,20 +154,21 @@ export default function ProfilePage() {
   );
 
   const ProfileImage = () => {
-    if (!formData.photoURL || imageError) {
+    const photoURL = watch('photoURL');
+    if (!photoURL || imageError) {
       return (
         <div className={clsx(
           'w-full h-full flex items-center justify-center',
           'text-white/50 text-4xl font-medium'
         )}>
-          {formData.displayName ? formData.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
+          {watch('displayName') ? watch('displayName')[0].toUpperCase() : user.email[0].toUpperCase()}
         </div>
       );
     }
 
     return (
       <img
-        src={formData.photoURL}
+        src={photoURL}
         alt="Profile"
         className="w-full h-full object-cover"
         onError={handleImageError}
@@ -155,31 +187,6 @@ export default function ProfilePage() {
         
         {user ? (
           <div className="space-y-8">
-            {/* Verification Status */}
-            {!user.emailVerified && (
-              <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <p className="text-yellow-400">
-                    Twój email nie został jeszcze zweryfikowany. Zweryfikuj swój adres email, aby w pełni korzystać z konta.
-                  </p>
-                  <button
-                    onClick={handleResendVerification}
-                    disabled={isVerifying}
-                    className={clsx(
-                      'py-2 px-4 rounded-lg',
-                      'bg-yellow-500/20 hover:bg-yellow-500/30',
-                      'text-yellow-400 font-medium',
-                      'transition-all duration-200',
-                      'disabled:opacity-50',
-                      'focus:outline-none focus:ring-2 focus:ring-yellow-500/25'
-                    )}
-                  >
-                    {isVerifying ? "Wysyłanie..." : "Wyślij ponownie link weryfikacyjny"}
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Error/Success Messages */}
             {error && (
               <div className={clsx(
@@ -203,7 +210,6 @@ export default function ProfilePage() {
                 </p>
               )}
             </div>
-
             {/* Profile Edit Form */}
             <form onSubmit={handleUpdateProfile} className="space-y-6">
               <div className="space-y-2">
@@ -214,8 +220,7 @@ export default function ProfilePage() {
                   id="displayName"
                   name="displayName"
                   type="text"
-                  value={formData.displayName}
-                  onChange={handleInputChange}
+                  {...register("displayName")}
                   className={clsx(
                     'w-full p-3 rounded-lg',
                     'bg-white/5 backdrop-blur-sm',
@@ -253,8 +258,7 @@ export default function ProfilePage() {
                   id="photoURL"
                   name="photoURL"
                   type="text"
-                  value={formData.photoURL}
-                  onChange={handleInputChange}
+                  {...register("photoURL")}
                   className={clsx(
                     'w-full p-3 rounded-lg',
                     'bg-white/5 backdrop-blur-sm',
@@ -271,17 +275,63 @@ export default function ProfilePage() {
                 )}
               </div>
 
+              {/* Address Fields */}
+              <div className="space-y-2">
+                <label htmlFor="street" className="text-sm font-medium text-white/70">Ulica</label>
+                <input
+                  id="street"
+                  name="street"
+                  type="text"
+                  {...register("street")}
+                  disabled={loading} 
+                  className={clsx(
+                    'w-full p-3 rounded-lg',
+                    'bg-white/5 backdrop-blur-sm',
+                    'border border-white/10',
+                    'text-white',
+                    'focus:outline-none focus:ring-2 focus:ring-white/25'
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="city" className="text-sm font-medium text-white/70">Miasto</label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  {...register("city")}
+                  disabled={loading} 
+                  className={clsx(
+                    'w-full p-3 rounded-lg',
+                    'bg-white/5 backdrop-blur-sm',
+                    'border border-white/10',
+                    'text-white',
+                    'focus:outline-none focus:ring-2 focus:ring-white/25'
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="zipCode" className="text-sm font-medium text-white/70">Kod pocztowy</label>
+                <input
+                  id="zipCode"
+                  name="zipCode"
+                  type="text"
+                  {...register("zipCode")}
+                  disabled={loading} 
+                  className={clsx(
+                    'w-full p-3 rounded-lg',
+                    'bg-white/5 backdrop-blur-sm',
+                    'border border-white/10',
+                    'text-white',
+                    'focus:outline-none focus:ring-2 focus:ring-white/25'
+                  )}
+                />
+              </div>
+
               <button
                 type="submit"
-                disabled={isUpdating}
-                className={clsx(
-                  'w-full py-2 px-4 rounded-lg',
-                  'bg-white/10 hover:bg-white/15',
-                  'text-white font-medium',
-                  'transition-all duration-200',
-                  'disabled:opacity-50',
-                  'focus:outline-none focus:ring-2 focus:ring-white/25'
-                )}
+                disabled={isUpdating || loading} 
+                className="w-full py-2 px-4 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-white font-medium transition-all duration-200"
               >
                 {isUpdating ? "Aktualizowanie..." : "Aktualizuj profil"}
               </button>
@@ -291,10 +341,6 @@ export default function ProfilePage() {
               <h2 className="text-xl font-medium text-white/90 mb-6">Informacje o koncie</h2>
               <div className="space-y-4">
                 <InfoField label="ID użytkownika" value={user.uid} />
-                <InfoField 
-                  label="Status weryfikacji email" 
-                  value={user.emailVerified ? 'Zweryfikowany' : 'Niezweryfikowany'} 
-                />
                 <InfoField 
                   label="Data utworzenia konta" 
                   value={user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleString('pl-PL') : 'Brak danych'} 
@@ -308,57 +354,34 @@ export default function ProfilePage() {
 
             {showConfirmation ? (
               <div className="mt-8 space-y-4">
-                <p className="text-red-400 text-center">
-                  Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna.
-                </p>
-                <div className="flex gap-4">
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={isDeleting}
-                    className={clsx(
-                      'flex-1 py-2 px-4 rounded-lg',
-                      'bg-red-500/20 hover:bg-red-500/30',
-                      'text-red-400 font-medium',
-                      'transition-all duration-200',
-                      'disabled:opacity-50',
-                      'focus:outline-none focus:ring-2 focus:ring-red-500/25'
-                    )}
-                  >
-                    {isDeleting ? "Usuwanie..." : "Tak, usuń konto"}
-                  </button>
-                  <button
+                <p className="text-sm text-red-500">Czy na pewno chcesz usunąć swoje konto? To działanie jest nieodwracalne!</p>
+                <div className="flex space-x-4">
+                  <button 
                     onClick={cancelDelete}
-                    disabled={isDeleting}
-                    className={clsx(
-                      'flex-1 py-2 px-4 rounded-lg',
-                      'bg-white/5 hover:bg-white/10',
-                      'text-white font-medium',
-                      'transition-all duration-200',
-                      'disabled:opacity-50',
-                      'focus:outline-none focus:ring-2 focus:ring-white/25'
-                    )}
+                    className="py-2 px-4 bg-gray-600 rounded-lg text-white"
                   >
                     Anuluj
+                  </button>
+                  <button 
+                    onClick={handleDeleteAccount}
+                    className="py-2 px-4 bg-red-500/40 hover:bg-red-500/50 rounded-lg text-white"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Usuwanie..." : "Usuń konto"}
                   </button>
                 </div>
               </div>
             ) : (
               <button
-                onClick={handleDeleteAccount}
-                className={clsx(
-                  'mt-8 w-full py-2 px-4 rounded-lg',
-                  'bg-red-500/20 hover:bg-red-500/30',
-                  'text-red-400 font-medium',
-                  'transition-all duration-200',
-                  'focus:outline-none focus:ring-2 focus:ring-red-500/25'
-                )}
+                onClick={() => setShowConfirmation(true)}
+                className="w-full py-2 px-4 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-white font-medium transition-all duration-200"
               >
                 Usuń konto
               </button>
             )}
           </div>
         ) : (
-          <p className="text-center text-white/50">Ładowanie danych użytkownika...</p>
+          <p className="text-white">Ładowanie danych użytkownika...</p>
         )}
       </div>
     </div>
