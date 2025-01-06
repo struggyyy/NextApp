@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo} from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { db } from '../lib/firebase'; // Import Firebase configuration
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 
 const Calendar = () => {
   const { user } = useAuth();
-  const currentDate = new Date();
+  const currentDate = useMemo(() => new Date(), []);
 
   // Helper function to get the start of the week (Monday) for a given date
   function getStartOfWeek(date) {
@@ -272,11 +272,11 @@ useEffect(() => {
 
           {/* Right Schedule Panel */}
           <div className="col-span-2 bg-white p-6 rounded-lg shadow-md min-w-[250px]">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">Today's Schedule</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">Today&apos;s Schedule</h2>
             <div className="space-y-2">
               {isWeekend ? (
                 <div className="bg-white p-2 rounded border border-gray-200 text-center text-sm font-medium text-gray-600">
-                  It's the weekend! No classes today!
+                  It&apos;s the weekend! No classes today!
                 </div>
               ) : (
                 lessonSchedule

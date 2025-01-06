@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import clsx from 'clsx';
 import { useForm } from 'react-hook-form';
+import Image from 'next/image';
+
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -154,27 +156,29 @@ export default function ProfilePage() {
   );
 
   const ProfileImage = () => {
-    const photoURL = watch('photoURL');
-    if (!photoURL || imageError) {
-      return (
-        <div className={clsx(
-          'w-full h-full flex items-center justify-center',
-          'text-white/50 text-4xl font-medium'
-        )}>
-          {watch('displayName') ? watch('displayName')[0].toUpperCase() : user.email[0].toUpperCase()}
-        </div>
-      );
-    }
-
+  const photoURL = watch('photoURL');
+  if (!photoURL || imageError) {
     return (
-      <img
-        src={photoURL}
-        alt="Profile"
-        className="w-full h-full object-cover"
-        onError={handleImageError}
-      />
+      <div className={clsx(
+        'w-full h-full flex items-center justify-center',
+        'text-white/50 text-4xl font-medium'
+      )}>
+        {watch('displayName') ? watch('displayName')[0].toUpperCase() : user.email[0].toUpperCase()}
+      </div>
     );
-  };
+  }
+
+  return (
+    <Image
+      src={photoURL}
+      alt="Profile"
+      width={140}
+      height={140}
+      className="w-full h-full object-cover"
+      onError={handleImageError}
+    />
+  );
+};
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh]">
