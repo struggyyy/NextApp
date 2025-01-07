@@ -12,7 +12,6 @@ To get started with this project, clone the repository and install the dependenc
 
 ```bash
 git clone https://github.com/struggyyy/NextApp
-cd calendar-app
 npm install
 ```
 
