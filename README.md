@@ -11,7 +11,7 @@ You can view the live version of the application (https://webapp-bf511.web.app)
 To get started with this project, clone the repository and install the dependencies:
 
 ```bash
-git clone https://github.com/yourusername/calendar-app.git
+git clone https://github.com/struggyyy/NextApp
 cd calendar-app
 npm install
 ```
