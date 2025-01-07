@@ -4,7 +4,9 @@ This is a Calendar application built with [Next.js](https://nextjs.org) that all
 
 ## Live Version
 
-You can view the live version of the application (https://webapp-bf511.web.app)
+You can view the live version of the application:
+vercel (https://calendar-ashen-six.vercel.app)
+firebase (https://webapp-bf511.web.app)
 
 ## Getting Started
 
